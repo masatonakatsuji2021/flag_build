@@ -37,13 +37,12 @@ const Flag = function(){
 
     this.start = async function(callback){
 
-
-            if(callback){
-                callback.bind(this)();
-            }
-            else{
-                await use("app/index.js");
-            }
+        if(callback){
+            callback.bind(this)();
+        }
+        else{
+            await use("app/index.js");
+        }
             
     };
 };

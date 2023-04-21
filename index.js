@@ -56,6 +56,63 @@ module.exports = function(option){
         return res;
     };
 
+    const notCommentout = function(string){
+
+        var buff = string.split("/*");
+        var buff2 = [];
+        for(var n = 0 ; n < buff.length ; n++){
+            var b_ = buff[n];
+    
+            if(n == 0){
+                buff2.push(b_);
+                continue;
+            }
+    
+            b_ = b_.split("*/");
+            b_.shift();
+            buff2.push(b_.join(""));        
+        }
+    
+        var stringBuff = buff2.join("");
+
+        var buff = stringBuff.split("// ");
+        var buff2 = [];
+        for(var n = 0 ; n < buff.length ; n++){
+            var b_ = buff[n];
+    
+            if(n == 0){
+                buff2.push(b_);
+                continue;
+            }
+    
+            b_ = b_.split("\n");
+            b_.shift();
+            buff2.push(b_.join(""));
+        }
+    
+        var stringBuff = buff2.join("");
+    
+        var buff = stringBuff.split("\n");
+        var buff2 = [];
+        for(var n = 0 ; n < buff.length ; n++){
+            var b_ = buff[n];
+            buff2.push(b_.trim());
+        }
+    
+        var stringBuff = buff2.join("");
+    
+        var buff = stringBuff.split("\r");
+        var buff2 = [];
+        for(var n = 0 ; n < buff.length ; n++){
+            var b_ = buff[n];
+            buff2.push(b_.trim());
+        }
+        var stringBuff = buff2.join("");
+    
+        return stringBuff;
+    };
+    
+
     if(option == undefined){
         option = {};
     }    
@@ -163,14 +220,7 @@ module.exports = function(option){
     scriptStr += "})();"
 
     if(!option.Uncompressed){
-        var buff = scriptStr;
-        scriptStr = "";
-        buff = buff.split("\n");
-        for(var n = 0 ; n < buff.length ; n++){
-            var b_ = buff[n];
-            b_ = b_.trim();
-            scriptStr += b_;
-        }
+        scriptStr = notCommentout(scriptStr);
     }
 
     fs.writeFileSync(option.build + "/index.min.js",scriptStr);
