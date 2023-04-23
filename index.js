@@ -137,12 +137,6 @@ module.exports = function(option){
 
     var getFiles = deepSearch(option.root);
 
-    fs.mkdirSync(option.build, {
-        recursive : true,
-    });
-    
-    cli.outn("# Mkdir ".padEnd(padEnd) + option.build);
-
     var scriptStr = "(function(){\n";
 
     if(option.const){
@@ -157,25 +151,6 @@ module.exports = function(option){
     }
 
     scriptStr += fs.readFileSync(__dirname + "/bin/build_header.js").toString() + "\n";
-
-    for(var n = 0 ; n < getFiles.dir.length ; n++){
-        var dir = getFiles.dir[n];
-
-        if(dir.indexOf(option.root + "/app") === 0){
-            continue;
-        }
-        else if(option.contents){
-            if(dir.indexOf(option.root + "/" + option.contents) === 0){
-                continue;
-            }
-        }
-
-        fs.mkdirSync(option.build + "/" + dir.substring(option.root.length + 1),{
-            recursive: true,
-        });
-
-        cli.outn("# Mkdir  ".padEnd(padEnd) + option.build + "/" + dir.substring(option.root.length + 1));
-    }
 
     if(option.core){
         var columns = Object.keys(option.core);
@@ -199,6 +174,31 @@ module.exports = function(option){
 
             cli.outn("# Set Content(HTML) ".padEnd(padEnd) + contentname);
         }
+    }
+
+    fs.mkdirSync(option.build, {
+        recursive : true,
+    });
+    
+    cli.outn("# Mkdir ".padEnd(padEnd) + option.build);
+    
+    for(var n = 0 ; n < getFiles.dir.length ; n++){
+        var dir = getFiles.dir[n];
+
+        if(dir.indexOf(option.root + "/app") === 0){
+            continue;
+        }
+        else if(option.contents){
+            if(dir.indexOf(option.root + "/" + option.contents) === 0){
+                continue;
+            }
+        }
+
+        fs.mkdirSync(option.build + "/" + dir.substring(option.root.length + 1),{
+            recursive: true,
+        });
+
+        cli.outn("# Mkdir  ".padEnd(padEnd) + option.build + "/" + dir.substring(option.root.length + 1));
     }
 
     for(var n = 0 ; n < getFiles.file.length ; n++){
@@ -230,7 +230,7 @@ module.exports = function(option){
     
     scriptStr += "})();"
 
-    if(!option.Uncompressed){
+    if(!option.uncompressed){
         scriptStr = notCommentout(scriptStr);
     }
 
