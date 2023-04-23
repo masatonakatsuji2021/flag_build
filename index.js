@@ -1,5 +1,5 @@
+const cli = require("@flag/cli");
 const fs = require("fs");
-const filePath = require("path");
 
 module.exports = function(option){
 
@@ -112,6 +112,16 @@ module.exports = function(option){
         return stringBuff;
     };
     
+    cli
+        .indent(2)
+        .outn()
+        .outn("Frag Build ... SPA(SIngle-Page-Action) Builder...")
+        .outn("Build Start!!")
+        .outn()
+        .outn()
+    ;
+
+    const padEnd = 22;
 
     if(option == undefined){
         option = {};
@@ -130,7 +140,8 @@ module.exports = function(option){
     fs.mkdirSync(option.build, {
         recursive : true,
     });
-    console.log("[mkdir]".padEnd(17) + option.build);
+    
+    cli.outn("# Mkdir ".padEnd(padEnd) + option.build);
 
     var scriptStr = "(function(){\n";
 
@@ -141,7 +152,7 @@ module.exports = function(option){
             var key = columns[n];
             var val = option.const[key];
             scriptStr += "const " + key + " = " + JSON.stringify(val) +";\n";
-            console.log("[const]".padEnd(17) + key);
+            cli.outn("# set construct ".padEnd(padEnd) + key);
         }
     }
 
@@ -163,7 +174,7 @@ module.exports = function(option){
             recursive: true,
         });
 
-        console.log("[mkdir]".padEnd(17) + option.build + "/" + dir.substring(option.root.length + 1));
+        cli.outn("# Mkdir  ".padEnd(padEnd) + option.build + "/" + dir.substring(option.root.length + 1));
     }
 
     if(option.core){
@@ -172,7 +183,7 @@ module.exports = function(option){
             var name = columns[n]
             var contents = option.core[name];
             scriptStr += setScript(name, contents);
-            console.log("[read core]".padEnd(17) + name);
+            cli.outn("# Set Core ".padEnd(padEnd) + name);
         }
     }
 
@@ -186,7 +197,7 @@ module.exports = function(option){
             }
             scriptStr += setContent(contentname, contentPath);
 
-            console.log("[read content]".padEnd(17) + contentname);
+            cli.outn("# Set Content(HTML) ".padEnd(padEnd) + contentname);
         }
     }
 
@@ -195,7 +206,7 @@ module.exports = function(option){
 
         if(file.indexOf(option.root + "/app") === 0){
             scriptStr += setScript(file.substring(option.root.length + 1) , fs.readFileSync(file).toString());
-            console.log("[read script]".padEnd(17) + file.substring(option.root.length + 1));
+            cli.outn("# Set Content(JS) ".padEnd(padEnd) + file.substring(option.root.length + 1));
         }
         else{
 
@@ -206,7 +217,7 @@ module.exports = function(option){
             }
 
             fs.copyFileSync(file, option.build + "/" + file.substring(option.root.length + 1));
-            console.log("[copy]".padEnd(17) + file.substring(option.root.length + 1));
+            cli.outn("# CopyFile " .padEnd(padEnd) + file.substring(option.root.length + 1));
         }
     }
 
@@ -224,5 +235,12 @@ module.exports = function(option){
     }
 
     fs.writeFileSync(option.build + "/index.min.js",scriptStr);
-    console.log("[copy]".padEnd(17) + file.substring(option.root.length + 1));
+    cli.outn("# Build ".padEnd(padEnd) + option.build + "/index.min.js");
+
+    cli
+        .outn()
+        .outn()
+        .outn("..... Build Complete!")
+    ;
+
 };
