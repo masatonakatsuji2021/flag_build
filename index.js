@@ -1,5 +1,6 @@
 const cli = require("@flag/cli");
 const fs = require("fs");
+const { execSync } = require("child_process");
 
 module.exports = function(option){
 
@@ -232,10 +233,31 @@ module.exports = function(option){
 
     if(!option.uncompressed){
         scriptStr = notCommentout(scriptStr);
+        cli.outn("# code Compress...");
     }
 
-    fs.writeFileSync(option.build + "/index.min.js",scriptStr);
-    cli.outn("# Build ".padEnd(padEnd) + option.build + "/index.min.js");
+
+
+    if(option.typeScript){
+        fs.writeFileSync(option.build + "/index.min.ts",scriptStr);
+        cli.outn("# Build ".padEnd(padEnd) + option.build + "/index.min.ts");
+        cli.outn("Trans Complie..");
+        try{
+            execSync("tsc " + option.build + "/index.min.ts");
+        }catch(error){}
+
+        if(!option.uncompressed){
+            var scriptStr = fs.readFileSync(option.build + "/index.min.js").toString();
+            scriptStr = notCommentout(scriptStr);
+            fs.writeFileSync(option.build + "/index.min.js", scriptStr);
+            cli.outn("# code Re-compress...");
+        }
+    
+    }
+    else{
+        fs.writeFileSync(option.build + "/index.min.js",scriptStr);
+        cli.outn("# Build ".padEnd(padEnd) + option.build + "/index.min.js");
+    }
 
     cli
         .outn()

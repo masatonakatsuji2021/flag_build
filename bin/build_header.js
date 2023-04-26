@@ -49,6 +49,18 @@ const Flag = function(){
 const use = function(name){
     return flag.getFn(name);
 };
+const uses = function(names){
+
+    var buffers = {};
+    names.forEach((n) => {
+        var buff = use(n);
+        var name = n.split("/");
+        name = name[name.length - 1];
+        buffers[name] = buff;
+    });
+
+    return buffers;
+};
 const useExists = function(name){
     return flag.exists(name);
 };
