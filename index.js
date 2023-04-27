@@ -22,8 +22,8 @@ module.exports = function(option){
         return "flag.setFn(\"" + name + "\", function(){\n" + contents + "});\n";
     };
 
-    const setContent = function(name, path){
-        var content = fs.readFileSync(path).toString();
+    const setContent = function(name, content){
+//        var content = fs.readFileSync(path).toString();
         content = Buffer.from(content).toString('base64'); 
         return "flag.setFn(\"" + name + "\", function(){ return \"" + content + "\"});\n";
     };
@@ -164,6 +164,16 @@ module.exports = function(option){
         }
     }
 
+    if(option.coreHtml){
+        var columns = Object.keys(option.coreHtml);
+        for(var n = 0 ; n < columns.length ; n++){
+            var name = columns[n]
+            var contents = option.coreHtml[name];
+            scriptStr += setContent(name, contents);
+            cli.outn("# Set Core(HTML) ".padEnd(padEnd) + name);
+        }
+    }
+
     if(option.contents){
         var search = deepSearch(option.root + "/" + option.contents);
         for(var n = 0 ; n < search.file.length ; n++){
@@ -172,7 +182,8 @@ module.exports = function(option){
             if(contentname.substring(0,1)=="/"){
                 contentname = contentname.substring(1);
             }
-            scriptStr += setContent(contentname, contentPath);
+            var content = fs.readFileSync(contentPath).toString();
+            scriptStr += setContent(contentname, content);
 
             cli.outn("# Set Content(HTML) ".padEnd(padEnd) + contentname);
         }
