@@ -18,6 +18,7 @@ module.exports = function(option){
     }
 
     const setScript = function(name, contents){
+        contents = "let exports;\n" + contents + "\nreturn exports;";
         return "flag.setFn(\"" + name + "\", function(){\n" + contents + "});\n";
     };
 
@@ -206,8 +207,9 @@ module.exports = function(option){
         var file = getFiles.file[n];
 
         if(file.indexOf(option.root + "/app") === 0){
-            scriptStr += setScript(file.substring(option.root.length + 1) , fs.readFileSync(file).toString());
-            cli.outn("# Set Content(JS) ".padEnd(padEnd) + file.substring(option.root.length + 1));
+            var fileName = file.substring(option.root.length + 1).slice(0, -3);
+            scriptStr += setScript(fileName , fs.readFileSync(file).toString());
+            cli.outn("# Set Content(JS) ".padEnd(padEnd) + fileName);
         }
         else{
 

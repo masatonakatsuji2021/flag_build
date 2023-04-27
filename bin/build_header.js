@@ -41,7 +41,7 @@ const Flag = function(){
             callback.bind(this)();
         }
         else{
-            await use("app/index.js");
+            await use("app/index");
         }
             
     };
