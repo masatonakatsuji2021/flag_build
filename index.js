@@ -18,7 +18,9 @@ module.exports = function(option){
     }
 
     const setScript = function(name, contents){
-        contents = "let exports;\n" + contents + "\nreturn exports;";
+        if(option.typeScript){
+            contents = "let exports;\n" + contents + "\nreturn exports;";
+        }
         return "flag.setFn(\"" + name + "\", function(){\n" + contents + "});\n";
     };
 
@@ -129,15 +131,26 @@ module.exports = function(option){
         option = {};
     }    
 
-    if(option.root == undefined){
-        option.root = "src";
+    if(option.rootPath == undefined){
+        option.rootPath = "./src";
     }
 
-    if(option.build == undefined){
-        option.build = "__build";
+    if(option.buildPath == undefined){
+        option.buildPath = "./__build";
     }
 
-    var getFiles = deepSearch(option.root);
+    if(option.sourceMap){
+        var maps = {
+            version: 3,
+            sources: [],
+            names: [],
+            mappings: "",
+            file: "index.min.js",
+            sourcesContent: [],
+        };
+    }
+
+    var getFiles = deepSearch(option.rootPath);
 
     var scriptStr = "(function(){\n";
 
@@ -161,6 +174,10 @@ module.exports = function(option){
             var contents = option.core[name];
             scriptStr += setScript(name, contents);
             cli.outn("# Set Core ".padEnd(padEnd) + name);
+            if(option.sourceMap){
+                maps.sources.push("Flag Native/" + name);
+                maps.sourcesContent.push(contents);
+            }
         }
     }
 
@@ -175,10 +192,10 @@ module.exports = function(option){
     }
 
     if(option.contents){
-        var search = deepSearch(option.root + "/" + option.contents);
+        var search = deepSearch(option.rootPath + "/" + option.contents);
         for(var n = 0 ; n < search.file.length ; n++){
             var contentPath = search.file[n];
-            var contentname = contentPath.substring((option.root + "/" + option.contents).length);
+            var contentname = contentPath.substring((option.rootPath + "/" + option.contents).length);
             if(contentname.substring(0,1)=="/"){
                 contentname = contentname.substring(1);
             }
@@ -189,49 +206,54 @@ module.exports = function(option){
         }
     }
 
-    fs.mkdirSync(option.build, {
+    fs.mkdirSync(option.buildPath, {
         recursive : true,
     });
     
-    cli.outn("# Mkdir ".padEnd(padEnd) + option.build);
+    cli.outn("# Mkdir ".padEnd(padEnd) + option.buildPath);
     
     for(var n = 0 ; n < getFiles.dir.length ; n++){
         var dir = getFiles.dir[n];
 
-        if(dir.indexOf(option.root + "/app") === 0){
+        if(dir.indexOf(option.rootPath + "/app") === 0){
             continue;
         }
         else if(option.contents){
-            if(dir.indexOf(option.root + "/" + option.contents) === 0){
+            if(dir.indexOf(option.rootPath + "/" + option.contents) === 0){
                 continue;
             }
         }
 
-        fs.mkdirSync(option.build + "/" + dir.substring(option.root.length + 1),{
+        fs.mkdirSync(option.buildPath + "/" + dir.substring(option.rootPath.length + 1),{
             recursive: true,
         });
 
-        cli.outn("# Mkdir  ".padEnd(padEnd) + option.build + "/" + dir.substring(option.root.length + 1));
+        cli.outn("# Mkdir  ".padEnd(padEnd) + option.buildPath + "/" + dir.substring(option.rootPath.length + 1));
     }
 
     for(var n = 0 ; n < getFiles.file.length ; n++){
         var file = getFiles.file[n];
 
-        if(file.indexOf(option.root + "/app") === 0){
-            var fileName = file.substring(option.root.length + 1).slice(0, -3);
-            scriptStr += setScript(fileName , fs.readFileSync(file).toString());
+        if(file.indexOf(option.rootPath + "/app") === 0){
+            var fileName = file.substring(option.rootPath.length + 1).slice(0, -3);
+            var contents = fs.readFileSync(file).toString();
+            scriptStr += setScript(fileName , contents);
             cli.outn("# Set Content(JS) ".padEnd(padEnd) + fileName);
+            if(option.sourceMap){
+                maps.sources.push(fileName);
+                maps.sourcesContent.push(contents);
+            }
         }
         else{
 
             if(option.contents){
-                if(file.indexOf(option.root + "/" + option.contents) === 0){
+                if(file.indexOf(option.rootPath + "/" + option.contents) === 0){
                     continue;
                 }
             }
 
-            fs.copyFileSync(file, option.build + "/" + file.substring(option.root.length + 1));
-            cli.outn("# CopyFile " .padEnd(padEnd) + file.substring(option.root.length + 1));
+            fs.copyFileSync(file, option.buildPath + "/" + file.substring(option.rootPath.length + 1));
+            cli.outn("# CopyFile " .padEnd(padEnd) + file.substring(option.rootPath.length + 1));
         }
     }
 
@@ -252,24 +274,31 @@ module.exports = function(option){
 
 
     if(option.typeScript){
-        fs.writeFileSync(option.build + "/index.min.ts",scriptStr);
-        cli.outn("# Build ".padEnd(padEnd) + option.build + "/index.min.ts");
-        cli.outn("Trans Complie..");
+        fs.writeFileSync(option.buildPath + "/index.min.ts",scriptStr);
+        cli.outn("# Build ".padEnd(padEnd) + option.buildPath + "/index.min.ts");
+        cli.outn("# Trans Complie..");
         try{
-            execSync("tsc " + option.build + "/index.min.ts");
+            execSync("tsc " + option.buildPath + "/index.min.ts");
         }catch(error){}
 
         if(!option.uncompressed){
-            var scriptStr = fs.readFileSync(option.build + "/index.min.js").toString();
+            var scriptStr = fs.readFileSync(option.buildPath + "/index.min.js").toString();
             scriptStr = notCommentout(scriptStr);
-            fs.writeFileSync(option.build + "/index.min.js", scriptStr);
             cli.outn("# code Re-compress...");
+            if(option.sourceMap){
+                scriptStr = "//# sourceMappingURL=index.min.map\n" + scriptStr;
+            }
+            fs.writeFileSync(option.buildPath + "/index.min.js", scriptStr);
+            cli.outn("# ReCompress ".padEnd(padEnd) + option.buildPath + "/index.min.js");
+            if(option.sourceMap){
+                fs.writeFileSync(option.buildPath + "/index.min.map", JSON.stringify(maps));
+                cli.outn("# MakeMap ".padEnd(padEnd) + option.buildPath + "/index.min.map");
+            }
         }
-    
     }
     else{
-        fs.writeFileSync(option.build + "/index.min.js",scriptStr);
-        cli.outn("# Build ".padEnd(padEnd) + option.build + "/index.min.js");
+        fs.writeFileSync(option.buildPath + "/index.min.js",scriptStr);
+        cli.outn("# Build ".padEnd(padEnd) + option.buildPath + "/index.min.js");
     }
 
     cli
