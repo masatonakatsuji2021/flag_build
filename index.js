@@ -271,29 +271,34 @@ module.exports = function(option){
         cli.outn("# code Compress...");
     }
 
-
-
     if(option.typeScript){
+        scriptStr = "// @ts-nocheck\n" + scriptStr;
         fs.writeFileSync(option.buildPath + "/index.min.ts",scriptStr);
         cli.outn("# Build ".padEnd(padEnd) + option.buildPath + "/index.min.ts");
         cli.outn("# Trans Complie..");
         try{
             execSync("tsc " + option.buildPath + "/index.min.ts");
-        }catch(error){}
+        }catch(error){
+            // console.log(error);
+        }
+
+        var scriptStr = fs.readFileSync(option.buildPath + "/index.min.js").toString();
 
         if(!option.uncompressed){
-            var scriptStr = fs.readFileSync(option.buildPath + "/index.min.js").toString();
             scriptStr = notCommentout(scriptStr);
             cli.outn("# code Re-compress...");
-            if(option.sourceMap){
-                scriptStr = "//# sourceMappingURL=index.min.map\n" + scriptStr;
-            }
-            fs.writeFileSync(option.buildPath + "/index.min.js", scriptStr);
-            cli.outn("# ReCompress ".padEnd(padEnd) + option.buildPath + "/index.min.js");
-            if(option.sourceMap){
-                fs.writeFileSync(option.buildPath + "/index.min.map", JSON.stringify(maps));
-                cli.outn("# MakeMap ".padEnd(padEnd) + option.buildPath + "/index.min.map");
-            }
+        }
+        
+        if(option.sourceMap){
+            scriptStr = "//# sourceMappingURL=index.min.map\n" + scriptStr;
+        }
+        
+        fs.writeFileSync(option.buildPath + "/index.min.js", scriptStr);
+        
+        cli.outn("# ReCompress ".padEnd(padEnd) + option.buildPath + "/index.min.js");
+        if(option.sourceMap){
+            fs.writeFileSync(option.buildPath + "/index.min.map", JSON.stringify(maps));
+            cli.outn("# MakeMap ".padEnd(padEnd) + option.buildPath + "/index.min.map");
         }
     }
     else{
