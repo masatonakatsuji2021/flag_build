@@ -161,7 +161,7 @@ module.exports = function(option){
             var key = columns[n];
             var val = option.const[key];
             scriptStr += "const " + key + " = " + JSON.stringify(val) +";\n";
-            cli.outn("# set construct ".padEnd(padEnd) + key);
+            cli.green("#").outn("set construct ".padEnd(padEnd) + key);
         }
     }
 
@@ -173,7 +173,7 @@ module.exports = function(option){
             var name = columns[n]
             var contents = option.core[name];
             scriptStr += setScript(name, contents);
-            cli.outn("# Set Core ".padEnd(padEnd) + name);
+            cli.green("#").outn("Set Core ".padEnd(padEnd) + name);
             if(option.sourceMap){
                 maps.sources.push("Flag Native/" + name);
                 maps.sourcesContent.push(contents);
@@ -187,7 +187,7 @@ module.exports = function(option){
             var name = columns[n]
             var contents = option.coreHtml[name];
             scriptStr += setContent(name, contents);
-            cli.outn("# Set Core(HTML) ".padEnd(padEnd) + name);
+            cli.green("#").outn("Set Core(HTML) ".padEnd(padEnd) + name);
         }
     }
 
@@ -202,7 +202,7 @@ module.exports = function(option){
             var content = fs.readFileSync(contentPath).toString();
             scriptStr += setContent(contentname, content);
 
-            cli.outn("# Set Content(HTML) ".padEnd(padEnd) + contentname);
+            cli.green("#").outn("Set Content(HTML) ".padEnd(padEnd) + contentname);
         }
     }
 
@@ -210,7 +210,7 @@ module.exports = function(option){
         recursive : true,
     });
     
-    cli.outn("# Mkdir ".padEnd(padEnd) + option.buildPath);
+    cli.green("#").outn("Mkdir ".padEnd(padEnd) + option.buildPath);
     
     for(var n = 0 ; n < getFiles.dir.length ; n++){
         var dir = getFiles.dir[n];
@@ -228,7 +228,7 @@ module.exports = function(option){
             recursive: true,
         });
 
-        cli.outn("# Mkdir  ".padEnd(padEnd) + option.buildPath + "/" + dir.substring(option.rootPath.length + 1));
+        cli.green("#").outn("Mkdir  ".padEnd(padEnd) + option.buildPath + "/" + dir.substring(option.rootPath.length + 1));
     }
 
     for(var n = 0 ; n < getFiles.file.length ; n++){
@@ -238,7 +238,7 @@ module.exports = function(option){
             var fileName = file.substring(option.rootPath.length + 1).slice(0, -3);
             var contents = fs.readFileSync(file).toString();
             scriptStr += setScript(fileName , contents);
-            cli.outn("# Set Content(JS) ".padEnd(padEnd) + fileName);
+            cli.green("#").outn("Set Content(JS) ".padEnd(padEnd) + fileName);
             if(option.sourceMap){
                 maps.sources.push(fileName);
                 maps.sourcesContent.push(contents);
@@ -253,7 +253,7 @@ module.exports = function(option){
             }
 
             fs.copyFileSync(file, option.buildPath + "/" + file.substring(option.rootPath.length + 1));
-            cli.outn("# CopyFile " .padEnd(padEnd) + file.substring(option.rootPath.length + 1));
+            cli.green("#").outn("CopyFile " .padEnd(padEnd) + file.substring(option.rootPath.length + 1));
         }
     }
 
@@ -268,14 +268,14 @@ module.exports = function(option){
 
     if(!option.uncompressed){
         scriptStr = notCommentout(scriptStr);
-        cli.outn("# code Compress...");
+        cli.green("#").outn("code Compress...");
     }
 
     if(option.typeScript){
         scriptStr = "// @ts-nocheck\n" + scriptStr;
         fs.writeFileSync(option.buildPath + "/index.min.ts",scriptStr);
-        cli.outn("# Build ".padEnd(padEnd) + option.buildPath + "/index.min.ts");
-        cli.outn("# Trans Complie..");
+        cli.green("#").outn("Build ".padEnd(padEnd) + option.buildPath + "/index.min.ts");
+        cli.green("#").outn("Trans Complie..");
         try{
             execSync("tsc " + option.buildPath + "/index.min.ts");
         }catch(error){
@@ -286,7 +286,7 @@ module.exports = function(option){
 
         if(!option.uncompressed){
             scriptStr = notCommentout(scriptStr);
-            cli.outn("# code Re-compress...");
+            cli.green("#").outn("code Re-compress...");
         }
         
         if(option.sourceMap){
@@ -295,21 +295,22 @@ module.exports = function(option){
         
         fs.writeFileSync(option.buildPath + "/index.min.js", scriptStr);
         
-        cli.outn("# ReCompress ".padEnd(padEnd) + option.buildPath + "/index.min.js");
+        cli.green("#").outn("ReCompress ".padEnd(padEnd) + option.buildPath + "/index.min.js");
         if(option.sourceMap){
             fs.writeFileSync(option.buildPath + "/index.min.map", JSON.stringify(maps));
-            cli.outn("# MakeMap ".padEnd(padEnd) + option.buildPath + "/index.min.map");
+            cli.green("#").ount("MakeMap ".padEnd(padEnd) + option.buildPath + "/index.min.map");
         }
     }
     else{
         fs.writeFileSync(option.buildPath + "/index.min.js",scriptStr);
-        cli.outn("# Build ".padEnd(padEnd) + option.buildPath + "/index.min.js");
+        cli.green("#").outn("Build ".padEnd(padEnd) + option.buildPath + "/index.min.js");
     }
 
     cli
         .outn()
         .outn()
-        .outn("..... Build Complete!")
+        .green("..... Build Complete!")
+        .outn()
     ;
 
 };
