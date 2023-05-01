@@ -298,7 +298,7 @@ module.exports = function(option){
         cli.green("#").outn("ReCompress ".padEnd(padEnd) + option.buildPath + "/index.min.js");
         if(option.sourceMap){
             fs.writeFileSync(option.buildPath + "/index.min.map", JSON.stringify(maps));
-            cli.green("#").ount("MakeMap ".padEnd(padEnd) + option.buildPath + "/index.min.map");
+            cli.green("#").outn("MakeMap ".padEnd(padEnd) + option.buildPath + "/index.min.map");
         }
     }
     else{
