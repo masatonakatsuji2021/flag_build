@@ -7,7 +7,7 @@ const Flag = function(){
         __fn[name] = callback;
     };
 
-    this.getFn = function(name){
+    this.getFn = function(name, pass){
         if(__fn_static[name]){
             return __fn_static[name];
         }
@@ -47,6 +47,18 @@ const Flag = function(){
     };
 };
 const use = function(name){
+    var buff = flag.getFn(name);
+
+    if(
+        buff.default && 
+        buff.__esModule
+    ){
+        buff = buff.default;
+    }
+
+    return buff;
+};
+const require = function(name){
     return flag.getFn(name);
 };
 const uses = function(names){

@@ -1,6 +1,7 @@
 const cli = require("@flag/cli");
 const fs = require("fs");
 const { execSync } = require("child_process");
+const filePath = require("path");
 
 module.exports = function(option){
 
@@ -18,9 +19,7 @@ module.exports = function(option){
     }
 
     const setScript = function(name, contents){
-        if(option.typeScript){
-            contents = "let exports;\n" + contents + "\nreturn exports;";
-        }
+        contents = "var exports = {};\n" + contents + ";\nreturn exports;";
         return "flag.setFn(\"" + name + "\", function(){\n" + contents + "});\n";
     };
 
@@ -31,6 +30,17 @@ module.exports = function(option){
     };
 
     const deepSearch = function(path){
+
+        var judge = false;
+        try{
+
+            if(fs.statSync(path).isDirectory()){
+                judge = true;
+            }
+    
+        }catch(error){
+            return null;
+        }
 
         var glob = fs.readdirSync(path);
     
@@ -102,7 +112,16 @@ module.exports = function(option){
             var b_ = buff[n];
             buff2.push(b_.trim());
         }
+
+        var stringBuff = buff2.join("");
     
+        var buff = stringBuff.split("    ");
+        var buff2 = [];
+        for(var n = 0 ; n < buff.length ; n++){
+            var b_ = buff[n];
+            buff2.push(b_.trim());
+        }
+
         var stringBuff = buff2.join("");
     
         var buff = stringBuff.split("\r");
@@ -150,6 +169,17 @@ module.exports = function(option){
         };
     }
 
+    if(option.typeScript){
+        cli.green("#").outn("TypeScript Complie....");
+
+        try{
+            execSync("tsc", {cwd: option.rootPath});
+        }catch(error){
+            console.log(error);
+            return;
+        }
+    }
+    
     var getFiles = deepSearch(option.rootPath);
 
     var scriptStr = "(function(){\n";
@@ -193,16 +223,18 @@ module.exports = function(option){
 
     if(option.contents){
         var search = deepSearch(option.rootPath + "/" + option.contents);
-        for(var n = 0 ; n < search.file.length ; n++){
-            var contentPath = search.file[n];
-            var contentname = contentPath.substring((option.rootPath + "/" + option.contents).length);
-            if(contentname.substring(0,1)=="/"){
-                contentname = contentname.substring(1);
-            }
-            var content = fs.readFileSync(contentPath).toString();
-            scriptStr += setContent(contentname, content);
+        if(search){
+            for(var n = 0 ; n < search.file.length ; n++){
+                var contentPath = search.file[n];
+                var contentname = contentPath.substring((option.rootPath + "/" + option.contents).length);
+                if(contentname.substring(0,1)=="/"){
+                    contentname = contentname.substring(1);
+                }
+                var content = fs.readFileSync(contentPath).toString();
+                scriptStr += setContent(contentname, content);
 
-            cli.green("#").outn("Set Content(HTML) ".padEnd(padEnd) + contentname);
+                cli.green("#").outn("Set Content(HTML) ".padEnd(padEnd) + contentname);
+            }
         }
     }
 
@@ -235,6 +267,9 @@ module.exports = function(option){
         var file = getFiles.file[n];
 
         if(file.indexOf(option.rootPath + "/app") === 0){
+            if(filePath.extname(file) != ".js"){
+                continue;
+            }
             var fileName = file.substring(option.rootPath.length + 1).slice(0, -3);
             var contents = fs.readFileSync(file).toString();
             scriptStr += setScript(fileName , contents);
@@ -271,39 +306,16 @@ module.exports = function(option){
         cli.green("#").outn("code Compress...");
     }
 
-    if(option.typeScript){
-        scriptStr = "// @ts-nocheck\n" + scriptStr;
-        fs.writeFileSync(option.buildPath + "/index.min.ts",scriptStr);
-        cli.green("#").outn("Build ".padEnd(padEnd) + option.buildPath + "/index.min.ts");
-        cli.green("#").outn("Trans Complie..");
-        try{
-            execSync("tsc " + option.buildPath + "/index.min.ts");
-        }catch(error){
-            // console.log(error);
-        }
-
-        var scriptStr = fs.readFileSync(option.buildPath + "/index.min.js").toString();
-
-        if(!option.uncompressed){
-            scriptStr = notCommentout(scriptStr);
-            cli.green("#").outn("code Re-compress...");
-        }
-        
-        if(option.sourceMap){
-            scriptStr = "//# sourceMappingURL=index.min.map\n" + scriptStr;
-        }
-        
-        fs.writeFileSync(option.buildPath + "/index.min.js", scriptStr);
-        
-        cli.green("#").outn("ReCompress ".padEnd(padEnd) + option.buildPath + "/index.min.js");
-        if(option.sourceMap){
-            fs.writeFileSync(option.buildPath + "/index.min.map", JSON.stringify(maps));
-            cli.green("#").outn("MakeMap ".padEnd(padEnd) + option.buildPath + "/index.min.map");
-        }
+    if(option.sourceMap){
+        scriptStr = "//# sourceMappingURL=index.min.map\n" + scriptStr;
     }
-    else{
-        fs.writeFileSync(option.buildPath + "/index.min.js",scriptStr);
-        cli.green("#").outn("Build ".padEnd(padEnd) + option.buildPath + "/index.min.js");
+
+    fs.writeFileSync(option.buildPath + "/index.min.js",scriptStr);
+    cli.green("#").outn("Build ".padEnd(padEnd) + option.buildPath + "/index.min.js");
+
+    if(option.sourceMap){
+        fs.writeFileSync(option.buildPath + "/index.min.map", JSON.stringify(maps));
+        cli.green("#").outn("MakeMap ".padEnd(padEnd) + option.buildPath + "/index.min.map");
     }
 
     cli
