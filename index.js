@@ -3,144 +3,133 @@ const fs = require("fs");
 const { execSync } = require("child_process");
 const filePath = require("path");
 
-module.exports = function(option){
+const setScript = function(name, contents){
+    contents = "var exports = {};\n" + contents + ";\nreturn exports;";
+    return "flag.setFn(\"" + name + "\", function(){\n" + contents + "});\n";
+};
 
-    const uniqId = function(){
+const setContent = function(name, content){
+//        var content = fs.readFileSync(path).toString();
+    content = Buffer.from(content).toString('base64'); 
+    return "flag.setFn(\"" + name + "\", function(){ return \"" + content + "\"});\n";
+};
 
-        var str = "";
+const deepSearch = function(path){
 
-        var lbn = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        for(var n = 0 ; n < 32; n++){
-            var s = lbn[parseInt(Math.random() * 1000) % lbn.length];
-            str + s;
+    var judge = false;
+    try{
+
+        if(fs.statSync(path).isDirectory()){
+            judge = true;
         }
 
-        return str;
+    }catch(error){
+        return null;
     }
 
-    const setScript = function(name, contents){
-        contents = "var exports = {};\n" + contents + ";\nreturn exports;";
-        return "flag.setFn(\"" + name + "\", function(){\n" + contents + "});\n";
+    var glob = fs.readdirSync(path);
+
+    var res = {
+        dir:[],
+        file:[],
     };
 
-    const setContent = function(name, content){
-//        var content = fs.readFileSync(path).toString();
-        content = Buffer.from(content).toString('base64'); 
-        return "flag.setFn(\"" + name + "\", function(){ return \"" + content + "\"});\n";
-    };
+    for(var n = 0 ; n < glob.length ; n++){
+        var g_ = path + "/" + glob[n];
 
-    const deepSearch = function(path){
-
-        var judge = false;
-        try{
-
-            if(fs.statSync(path).isDirectory()){
-                judge = true;
+        if(fs.statSync(g_).isDirectory()){
+            res.dir.push(g_);
+            var buffer = deepSearch(g_);
+            for(var n2 = 0 ; n2 < buffer.dir.length ; n2++){
+                res.dir.push(buffer.dir[n2]);
             }
-    
-        }catch(error){
-            return null;
-        }
-
-        var glob = fs.readdirSync(path);
-    
-        var res = {
-            dir:[],
-            file:[],
-        };
-    
-        for(var n = 0 ; n < glob.length ; n++){
-            var g_ = path + "/" + glob[n];
-    
-            if(fs.statSync(g_).isDirectory()){
-                res.dir.push(g_);
-                var buffer = deepSearch(g_);
-                for(var n2 = 0 ; n2 < buffer.dir.length ; n2++){
-                    res.dir.push(buffer.dir[n2]);
-                }
-                for(var n2 = 0 ; n2 < buffer.file.length ; n2++){
-                    res.file.push(buffer.file[n2]);
-                }
-            }
-            else{
-                res.file.push(g_);
+            for(var n2 = 0 ; n2 < buffer.file.length ; n2++){
+                res.file.push(buffer.file[n2]);
             }
         }
-    
-        return res;
-    };
-
-    const notCommentout = function(string){
-
-        var buff = string.split("/*");
-        var buff2 = [];
-        for(var n = 0 ; n < buff.length ; n++){
-            var b_ = buff[n];
-    
-            if(n == 0){
-                buff2.push(b_);
-                continue;
-            }
-    
-            b_ = b_.split("*/");
-            b_.shift();
-            buff2.push(b_.join(""));        
+        else{
+            res.file.push(g_);
         }
-    
-        var stringBuff = buff2.join("");
+    }
 
-        var buff = stringBuff.split("// ");
-        var buff2 = [];
-        for(var n = 0 ; n < buff.length ; n++){
-            var b_ = buff[n];
-    
-            if(n == 0){
-                buff2.push(b_);
-                continue;
-            }
-    
-            b_ = b_.split("\n");
-            b_.shift();
-            buff2.push(b_.join(""));
-        }
-    
-        var stringBuff = buff2.join("");
-    
-        var buff = stringBuff.split("\n");
-        var buff2 = [];
-        for(var n = 0 ; n < buff.length ; n++){
-            var b_ = buff[n];
-            buff2.push(b_.trim());
+    return res;
+};
+
+const notCommentout = function(string){
+
+    var buff = string.split("/*");
+    var buff2 = [];
+    for(var n = 0 ; n < buff.length ; n++){
+        var b_ = buff[n];
+
+        if(n == 0){
+            buff2.push(b_);
+            continue;
         }
 
-        var stringBuff = buff2.join("");
-    
-        var buff = stringBuff.split("    ");
-        var buff2 = [];
-        for(var n = 0 ; n < buff.length ; n++){
-            var b_ = buff[n];
-            buff2.push(b_.trim());
+        b_ = b_.split("*/");
+        b_.shift();
+        buff2.push(b_.join(""));        
+    }
+
+    var stringBuff = buff2.join("");
+
+    var buff = stringBuff.split("// ");
+    var buff2 = [];
+    for(var n = 0 ; n < buff.length ; n++){
+        var b_ = buff[n];
+
+        if(n == 0){
+            buff2.push(b_);
+            continue;
         }
 
-        var stringBuff = buff2.join("");
-    
-        var buff = stringBuff.split("\r");
-        var buff2 = [];
-        for(var n = 0 ; n < buff.length ; n++){
-            var b_ = buff[n];
-            buff2.push(b_.trim());
-        }
-        var stringBuff = buff2.join("");
-    
-        return stringBuff;
-    };
-    
+        b_ = b_.split("\n");
+        b_.shift();
+        buff2.push(b_.join(""));
+    }
+
+    var stringBuff = buff2.join("");
+
+    var buff = stringBuff.split("\n");
+    var buff2 = [];
+    for(var n = 0 ; n < buff.length ; n++){
+        var b_ = buff[n];
+        buff2.push(b_.trim());
+    }
+
+    var stringBuff = buff2.join("");
+
+    var buff = stringBuff.split("    ");
+    var buff2 = [];
+    for(var n = 0 ; n < buff.length ; n++){
+        var b_ = buff[n];
+        buff2.push(b_.trim());
+    }
+
+    var stringBuff = buff2.join("");
+
+    var buff = stringBuff.split("\r");
+    var buff2 = [];
+    for(var n = 0 ; n < buff.length ; n++){
+        var b_ = buff[n];
+        buff2.push(b_.trim());
+    }
+    var stringBuff = buff2.join("");
+
+    return stringBuff;
+};
+
+module.exports = function(option, cliOption){
+
+    if(!cliOption){
+        cliOption = [];
+    }
+
     cli
         .indent(2)
         .outn()
-        .outn("Frag Build ... SPA(SIngle-Page-Action) Builder...")
         .outn("Build Start!!")
-        .outn()
         .outn()
     ;
 
@@ -152,6 +141,18 @@ module.exports = function(option){
 
     if(option.rootPath == undefined){
         option.rootPath = "./src";
+    }
+
+    if(option.appPath == undefined){
+        option.appPath = option.rootPath + "/app";
+    }
+
+    if(option.renderingPath == undefined){
+        option.renderingPath = option.rootPath + "/rendering";
+    }
+
+    if(option.commonPath == undefined){
+        option.commonPath = option.rootPath + "/common";
     }
 
     if(option.buildPath == undefined){
@@ -170,17 +171,22 @@ module.exports = function(option){
     }
 
     if(option.typeScript){
-        cli.green("#").outn("TypeScript Complie....");
+        cli.green("#").out("TypeScript Complie....");
 
         try{
             execSync("tsc", {cwd: option.rootPath});
+            cli.outn("OK");
         }catch(error){
-            console.log(error);
+            cli.red("NG!").outn();
+            if(error.stdout){
+                cli.red("[TypeScript Error] ").outn(error.stdout.toString());
+            }
+            else{
+                cli.red("[TypeScript Error] ").outn(error.toString());
+            }
             return;
         }
     }
-    
-    var getFiles = deepSearch(option.rootPath);
 
     var scriptStr = "(function(){\n";
 
@@ -221,56 +227,43 @@ module.exports = function(option){
         }
     }
 
-    if(option.contents){
-        var search = deepSearch(option.rootPath + "/" + option.contents);
-        if(search){
-            for(var n = 0 ; n < search.file.length ; n++){
-                var contentPath = search.file[n];
-                var contentname = contentPath.substring((option.rootPath + "/" + option.contents).length);
-                if(contentname.substring(0,1)=="/"){
-                    contentname = contentname.substring(1);
-                }
-                var content = fs.readFileSync(contentPath).toString();
-                scriptStr += setContent(contentname, content);
+    var renderingFile = deepSearch(option.renderingPath);
 
-                cli.green("#").outn("Set Content(HTML) ".padEnd(padEnd) + contentname);
+    if(renderingFile){
+        for(var n = 0 ; n < renderingFile.file.length ; n++){
+            var contentPath = renderingFile.file[n];
+            var contentname = contentPath.substring(option.renderingPath.length);
+            if(contentname.substring(0,1)=="/"){
+                contentname = contentname.substring(1);
             }
+            var content = fs.readFileSync(contentPath).toString();
+            scriptStr += setContent(contentname, content);
+
+            cli.green("#").outn("Set Content(HTML) ".padEnd(padEnd) + contentname);
         }
     }
 
-    fs.mkdirSync(option.buildPath, {
-        recursive : true,
-    });
-    
-    cli.green("#").outn("Mkdir ".padEnd(padEnd) + option.buildPath);
-    
-    for(var n = 0 ; n < getFiles.dir.length ; n++){
-        var dir = getFiles.dir[n];
-
-        if(dir.indexOf(option.rootPath + "/app") === 0){
-            continue;
-        }
-        else if(option.contents){
-            if(dir.indexOf(option.rootPath + "/" + option.contents) === 0){
-                continue;
-            }
-        }
-
-        fs.mkdirSync(option.buildPath + "/" + dir.substring(option.rootPath.length + 1),{
-            recursive: true,
-        });
-
-        cli.green("#").outn("Mkdir  ".padEnd(padEnd) + option.buildPath + "/" + dir.substring(option.rootPath.length + 1));
+    if(option.appPathTsComplied){
+        var appFile = deepSearch(option.appPathTsComplied);
+    }
+    else{
+        var appFile = deepSearch(option.appPath);
     }
 
-    for(var n = 0 ; n < getFiles.file.length ; n++){
-        var file = getFiles.file[n];
+    if(appFile){
+        for(var n = 0 ; n < appFile.file.length ; n++){
+            var file = appFile.file[n];
 
-        if(file.indexOf(option.rootPath + "/app") === 0){
             if(filePath.extname(file) != ".js"){
                 continue;
             }
-            var fileName = file.substring(option.rootPath.length + 1).slice(0, -3);
+
+            if(option.appPathTsComplied){
+                var fileName = "app/" + file.substring(option.appPathTsComplied.length + 1).slice(0, -3);
+            }
+            else{
+                var fileName = "app/" + file.substring(option.appPath.length + 1).slice(0, -3);
+            }
             var contents = fs.readFileSync(file).toString();
             scriptStr += setScript(fileName , contents);
             cli.green("#").outn("Set Content(JS) ".padEnd(padEnd) + fileName);
@@ -279,18 +272,34 @@ module.exports = function(option){
                 maps.sourcesContent.push(contents);
             }
         }
-        else{
+    }
 
-            if(option.contents){
-                if(file.indexOf(option.rootPath + "/" + option.contents) === 0){
-                    continue;
-                }
-            }
+    fs.mkdirSync(option.buildPath,{
+        recursive: true,
+    });
+    cli.green("#").outn("Mkdir " + option.buildPath);
 
-            fs.copyFileSync(file, option.buildPath + "/" + file.substring(option.rootPath.length + 1));
-            cli.green("#").outn("CopyFile " .padEnd(padEnd) + file.substring(option.rootPath.length + 1));
+    var commonFile = deepSearch(option.commonPath);
+
+    if(commonFile){
+        for(var n = 0 ; n < commonFile.dir.length ; n++){
+            var dir = commonFile.dir[n];
+
+            fs.mkdirSync(option.buildPath + "/" + dir.substring(option.commonPath.length + 1),{
+                recursive: true,
+            });
+            cli.green("#").outn("Mkdir  ".padEnd(padEnd) + option.buildPath + "/" + dir.substring(option.commonPath.length + 1));
+        }
+        for(var n = 0 ; n < commonFile.file.length ; n++){
+            var file = commonFile.file[n];
+
+            fs.copyFileSync(file, option.buildPath + "/" + file.substring(option.commonPath.length + 1));
+            cli.green("#").outn("CopyFile " .padEnd(padEnd) + file.substring(option.commonPath.length + 1));
         }
     }
+
+    fs.copyFileSync(option.rootPath + "/index.html", option.buildPath + "/index.html");
+    cli.green("#").outn("CopyFile index.html");
 
     if(option.startCallback){
         scriptStr += "flag.start(" + option.startCallback.toString() + ");\n";  
@@ -301,7 +310,7 @@ module.exports = function(option){
     
     scriptStr += "})();"
 
-    if(!option.uncompressed){
+    if(option.compress){
         scriptStr = notCommentout(scriptStr);
         cli.green("#").outn("code Compress...");
     }
@@ -310,7 +319,7 @@ module.exports = function(option){
         scriptStr = "//# sourceMappingURL=index.min.map\n" + scriptStr;
     }
 
-    fs.writeFileSync(option.buildPath + "/index.min.js",scriptStr);
+    fs.writeFileSync(option.buildPath + "/index.min.js", scriptStr);
     cli.green("#").outn("Build ".padEnd(padEnd) + option.buildPath + "/index.min.js");
 
     if(option.sourceMap){
@@ -318,11 +327,13 @@ module.exports = function(option){
         cli.green("#").outn("MakeMap ".padEnd(padEnd) + option.buildPath + "/index.min.map");
     }
 
-    cli
-        .outn()
-        .outn()
-        .green("..... Build Complete!")
-        .outn()
-    ;
+    if(!cliOption.noExit){
+        cli
+            .outn()
+            .green("..... Build Complete!")
+            .outn()
+        ;
+
+    }
 
 };
