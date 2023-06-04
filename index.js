@@ -1,4 +1,4 @@
-const cli = require("@flag/cli");
+const cli = require("@flagfw/cli");
 const fs = require("fs");
 const { execSync } = require("child_process");
 const filePath = require("path");

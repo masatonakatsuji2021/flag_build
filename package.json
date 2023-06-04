@@ -1,5 +1,5 @@
 {
-    "name":"@flag/build",
+    "name":"@flagfw/build",
     "description":"A web framework for the client side that can deploy spa (single-page-action) simply and quickly. build package.",
     "author": "masato nakatsuji",
     "version":"1.0.0"
