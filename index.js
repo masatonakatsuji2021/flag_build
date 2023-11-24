@@ -100,7 +100,12 @@ exports.default = (option, cliOption) => {
     if (!cliOption) {
         cliOption = [];
     }
-    cli_1.FlagCLI.green("#").outn(" Build Start!!");
+    if (option.framework) {
+        cli_1.FlagCLI.greenn("# Build Start!! [framework = " + option.framework + "]");
+    }
+    else {
+        cli_1.FlagCLI.greenn("# Build Start!!");
+    }
     const padEnd = 22;
     if (option == undefined) {
         option = {};
@@ -223,7 +228,7 @@ exports.default = (option, cliOption) => {
     fs.mkdirSync(option.buildPath, {
         recursive: true,
     });
-    cli_1.FlagCLI.green("#").outn(" Mkdir " + option.buildPath);
+    cli_1.FlagCLI.green("#").outn(" Mkdir ".padEnd(padEnd) + option.buildPath);
     var commonFile = deepSearch(option.commonPath);
     if (commonFile) {
         for (var n = 0; n < commonFile.dir.length; n++) {
